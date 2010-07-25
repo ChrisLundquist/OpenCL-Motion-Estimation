@@ -1,0 +1,17 @@
+#define QPEX 4.0f
+#define lambda 4.0f
+
+int median(int a, int b, int c);
+
+inline uint delta_cost2(int2 mv);
+
+inline uint simple_sad( const read_only image2d_t pix1, const read_only image2d_t pix2, const int2 block, const int2 motion_vector, const uchar size );
+
+inline uint incremental_x_sad( const read_only image2d_t pix1, 
+    const read_only image2d_t pix2, 
+    const int2 block, // The block we are comparing against
+    const int2 motion_vector, 
+    const uchar height, 
+    const uint previous_value );
+
+#include "util.cl"
