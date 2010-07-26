@@ -1,45 +1,48 @@
 #include "util.hl"
 
-inline int4 find_best_motion_vector(
+inline int2 find_best_motion_vector(
         read_only image2d_t imageA,
         read_only image2d_t imageB,
-        const int2 block,
-        const uint block_size
+        int2 block
         ){
-    // This will look for a match in imageB
-    int2 test_block = (int2)(0,0);
-    int2 best_block = (int2)(0,0);
+    // start at block.x - window_size , block.y - window_size
+    block *= BLOCK_SIZE; //we were handed the (xth,yth) block. We want the top left pixel of it.
+    int2 test_block = (int2)(block.x - SEARCH_WINDOW_SIZE, block.y - SEARCH_WINDOW_SIZE);
+    int2 best_block = test_block;
     uint best_value = UINT_MAX;
     uint test_value = UINT_MAX;
     uint move_cost = UINT_MAX;
-    int2 image_size = get_image_dim(imageA);
 
-    
-    for( ; test_block.y < image_size.y; ++test_block.y)// For Each Row
-        for( test_block.x = 0; test_block.x < image_size.x; ++test_block.x)// Compare Each Element
+    // scan the row until block.y + window_size
+    // scan the column until block.x + window_size
+    for(; test_block.y < block.y + SEARCH_WINDOW_SIZE; test_block.y++)
+        for( test_block.x = block.x - SEARCH_WINDOW_SIZE; test_block.x < block.x + SEARCH_WINDOW_SIZE; test_block.x++)
         {
-            // Compare NOTE: simple_sad includes mv_cost
-            test_value = simple_sad(imageA,imageB,test_block,block,block_size);
-            move_cost = delta_cost2(block - test_block);
-            // Check if we have a better one
-            if(test_value + move_cost < best_value)
+            int2 motion_vector = block - test_block;
+
+            // find the difference of this choice
+            test_value = simple_sad( imageA, imageB, block, motion_vector);
+
+            move_cost = delta_cost2(motion_vector);
+            // update our best score if its better
+            if(move_cost + test_value < best_value)
             {
                 best_value = test_value + move_cost;
                 best_block = test_block;
             }
         }
-    return (int4)(best_block.x, best_block.y, best_value, 0);
-}
 
+    //return our match 
+    return block - best_block;
+}
 __kernel void motion_estimation(
         read_only image2d_t imageA,
         read_only image2d_t imageB,
-        write_only image2d_t result,
-        uint block_size
+        write_only image2d_t result
         )
 {
     int2 block = (int2)(get_global_id(0), get_global_id(1));
     // For each block in imageA ...
-    int4 motion_vector = find_best_motion_vector(imageA,imageB, block * (int2)block_size , block_size);
-    write_imagei(result,(int2)(block),(int4)(motion_vector));
+    int2 motion_vector = find_best_motion_vector(imageA,imageB, block);
+    write_answer(motion_vector, result);
 }

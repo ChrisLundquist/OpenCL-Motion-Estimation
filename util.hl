@@ -1,11 +1,14 @@
 #define QPEX 4.0f
 #define lambda 4.0f
+#define SEARCH_WINDOW_SIZE 64
+#define BLOCK_SIZE 16
 
-int median(int a, int b, int c);
+inline void write_answer( int2 motion_vector, write_only image2d_t result);
+inline int median(int a, int b, int c);
 
 inline uint delta_cost2(int2 mv);
 
-inline uint simple_sad( const read_only image2d_t pix1, const read_only image2d_t pix2, const int2 block, const int2 motion_vector, const uchar size );
+inline uint simple_sad( const read_only image2d_t pix1, const read_only image2d_t pix2, const int2 block, const int2 motion_vector);
 
 inline uint incremental_x_sad( const read_only image2d_t pix1, 
     const read_only image2d_t pix2, 
